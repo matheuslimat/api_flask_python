@@ -40,17 +40,15 @@ class Player(Resource):
 
     def post(self, id_player):
         if PlayerModel.get_player(id_player):
-            return {'message': 'Player id "{}" already exists.'\
+            return {"message": "Player id '{}' already exists."\
             .format(id_player)}, 400#bad request
         #traz os argumentos do corpo da requisição
         dados = Player.argumentos.parse_args()
         #isso é um objeto python
-        new_player_objeto = PlayerModel(id_player, **dados)
-        #isso é um parse pra json
-        new_player = new_player_objeto.json()
-
-        players_data.append(new_player)
-        return new_player, 200
+        player = PlayerModel(id_player, **dados)
+        player.save_player()
+        #faz o parse do objeto para formato json
+        return player.json()
 
     def put(self, id_player):   
         dados = Player.argumentos.parse_args()

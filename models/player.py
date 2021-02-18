@@ -29,4 +29,16 @@ class PlayerModel(banco.Model):
             if player['id_player'] == id_player:
                 return player
         return None
-        
+
+    @classmethod
+    def get_player(cls, id_player):
+        #select * from players where id_player = $id_player limit 1
+        player = cls.query.filter_by(id_player=id_player).first()
+        if player:
+            return player
+        return None
+    
+    def save_player(self):
+        banco.session.add(self)
+        banco.session.commit()
+        #salvou no banco de dados o objeto
