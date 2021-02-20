@@ -2,40 +2,23 @@ from flask_restful import Resource, reqparse
 from models.player import PlayerModel
 
 
-players_data = [
-    {
-        'id_player': '045678',
-        'name': 'Migor',
-        'kd': 1.25,
-        'last_played_map': 'Verdansk', #Rebirth Island
-        'last_match_kills': 4
-    },
-    {
-        'id_player': '041679',
-        'name': 'PanicoBRx7',
-        'kd': 1.20,
-        'last_played_map': 'Rebirth Island', #Rebirth Island
-        'last_match_kills': 7
-    }
-]
-
 class Players(Resource):
     def get(self):
-        return players_data
+        return {'players': [player.json() for player in PlayerModel.query.all()]}
 
 
 class Player(Resource):
     #definindo construtor é usado quando chama o parseargs
     argumentos = reqparse.RequestParser()
-    argumentos.add_argument('name')
-    argumentos.add_argument('kd')
-    argumentos.add_argument('last_played_map')
-    argumentos.add_argument('last_match_kills')
+    argumentos.add_argument('name', type=str, required=True, help="The field 'name' cannot be left blank")
+    argumentos.add_argument('kd', type=float, required=True, help="The field 'kd' cannot be left blank")
+    argumentos.add_argument('last_played_map', type=str)
+    argumentos.add_argument('last_match_kills', type=str)
 
     def get(self, id_player):
-        player = self.get_player(id_player)
+        player = PlayerModel.get_player(id_player)
         if player:
-            return player
+            return player.json()
         return{'message': 'Player not found.'}, 404
 
     def post(self, id_player):
@@ -46,23 +29,33 @@ class Player(Resource):
         dados = Player.argumentos.parse_args()
         #isso é um objeto python
         player = PlayerModel(id_player, **dados)
-        player.save_player()
+        try:
+            player.save_player()
+        except:
+            return {'message': 'An internal error ocurred trying to save player.'}, 500 #internal server error
         #faz o parse do objeto para formato json
         return player.json()
 
     def put(self, id_player):   
         dados = Player.argumentos.parse_args()
-        new_player_objeto = PlayerModel(id_player, **dados)
-        #isso é um parse pra json
-        new_player = new_player_objeto.json()
-        player = self.get_player(id_player)
-        if player:
-            player.update(new_player)
-            return player, 200 #ok
-        players_data.append(new_player)
-        return new_player, 201 #created
+        player_found = PlayerModel.get_player(id_player)
+        if player_found:
+            player_found.update_player(**dados)
+            player_found.save_player()
+            return player_found.json(), 200 #ok
+        player = PlayerModel(id_player, **dados)
+        try:
+            player.save_player()
+        except:
+            return {'message': 'An internal error ocurred trying to save player.'}, 500 #internal server error
+        return player.json(), 201 #created
 
     def delete(self, id_player):
-        global players_data # referencia a variavel global
-        players_data = [player for player in players_data if player['id_player'] != id_player]
-        return {'message': 'Player deleted'}
+        player_found = PlayerModel.get_player(id_player)
+        if player_found:
+            try:
+                player_found.delete_player()
+            except:
+                return {'message': 'An internal error ocurred trying to save player.'}, 500 #internal server error
+            return {'message': 'Player deleted'}
+        return {'message': 'Player not found'}
