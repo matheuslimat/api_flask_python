@@ -42,3 +42,14 @@ class PlayerModel(banco.Model):
         banco.session.add(self)
         banco.session.commit()
         #salvou no banco de dados o objeto
+
+    def update_player(self, name, kd, last_played_map, last_match_kills):
+        #quando é enviado o **dados para essa funcao cada parametro desse recebe um valor
+        self.name = name
+        self.kd = kd
+        self.last_played_map = last_played_map
+        self.last_match_kills = last_match_kills
+
+    def delete_player(self):
+        banco.session.delete(self)
+        banco.session.commit()
